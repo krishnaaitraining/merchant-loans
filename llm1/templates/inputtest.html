@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Open AI chat</title>
+</head>
+<body>
+    <h2>First Web chat with OpenAI</h2>
+    <form method="POST" action="/chatresponse">
+        <label for="message">Message:</label>
+        <textarea id="in_message" name="in_message" required cols="100" rows="10">{{input_message}}</textarea><br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <h2>Response</h2>
+<div id="response-container"></div>
+    {{ response_text|safe }}
+</div>
+</body>
+</html>
