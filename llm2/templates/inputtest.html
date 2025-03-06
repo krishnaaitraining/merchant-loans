@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Open AI chat</title>
+    <style>
+        body {
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            display: flex;
+            flex-direction: column; /* Align content vertically */
+        }
+        .maincontent {
+            display: flex;
+            flex-direction: column; /* Align content vertically */
+            height: 100%;
+        }
+        .content, .form-container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            height: 600px;
+            overflow-y: auto; /* Enable vertical scroll */
+        }
+        .form-container {
+            background-color: #f0f0f0;
+            padding: 20px;
+            text-align: center;
+            height: 20%;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="maincontent">
+    <div class="content">
+        {% for message in messages_history %}
+
+            <div>
+                {% if message[0]=='Member' %}
+                <div style="float: left;width:90%;">
+                    <div style="margin: 0 auto;background-color: aliceblue;">
+                <b>{{ message[0]|safe}}</b><br/> 
+                {{ message[1]|safe}} 
+                </div>
+                </div>
+                {% else %}
+                <div style="float: right;width:90%;">
+                    <div style="margin: 0 auto;background-color: antiquewhite;white-space: pre-wrap;">
+                <b>{{ message[0]|safe}}</b><br/> 
+                {{ message[1]|safe}} 
+                    </div>
+                </div>
+                {% endif %}
+
+                           
+            </div>
+    
+    {% endfor %}
+        </div>
+        <div class="form-container">
+            <h2>First Web chat with OpenAI</h2>
+    <form method="POST" action="/chatresponse">
+        <label for="message">Message:</label>
+        <textarea id="in_message" name="in_message" required cols="100" rows="10">{{input_message}}</textarea><br><br>
+        <input type="hidden" name="session_id" id="session_id" value="352345"/>
+        <select name="model_name" id="model_name">
+            <option value="openai" {% if model_name == 'openai' %} selected {%endif %}>openai</option>
+            <option value="groq" {% if model_name == 'groq' %} selected {%endif %}>groq</option>
+            <option value="gemini" {% if model_name == 'gemini' %} selected {%endif %}>gemini</option>
+        </select>
+        <button type="submit">Submit</button>
+    </form>
+        </div>    
+    </div>
+    
+</body>
+</html>
