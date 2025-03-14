@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <title>Testing Open AI chat</title>
+    <style>
+        body {
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            display: flex;
+            flex-direction: column; /* Align content vertically */
+        }
+        .maincontent {
+            display: flex;
+            flex-direction: column; /* Align content vertically */
+            height: 100%;
+        }
+        .content, .form-container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            height: 600px;
+            overflow-y: scroll; /* Enable vertical scroll */
+        }
+        .form-container {
+            background-color: #f0f0f0;
+            padding: 20px;
+            text-align: center;
+            height: 100;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header bg-primary" style=" min-height: 50px;">
+        <h2>Welcome to Finbloom Chat - Powered by Agentic AI</h2>
+        <div class="row">
+            <div class="col-sm-5">
+            <h5>Logged in as :{{current_user.username}}</h5> 
+        </div>
+        <div class="col-sm-7">
+            <a href="/logout" class="btn btn-danger">Logout</a>
+        </div>
+        </div>
+    </div>
+
+    <div class="row">
+
+    <div class="col-sm-2 bg-info" style="min-height: 800px;">
+        <button id="newchat">New Chat</button><button id="refresh">Refresh</button>
+        <h3>Chat History:</h3>
+        <ul class="list-group">
+            {% for message in chats %}
+                <li class="list-group-item">
+                    <a href="/chatdetails?chatid={{ message[0]}}">{{ message[2] }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="col-sm-10">
+    <div class="content">
+            <div class="chat-box" id="chatBox">
+                {% for chatmessage in chat_details %}
+             
+                   
+                        {% if chatmessage[1]=='user' %}
+                <div style="float: left; width:100%">
+                    <div style="background-color: aliceblue;width:90%;">
+                        User:<br/>
+                <b>{{ chatmessage[2] |safe}}</b><br/> 
+                sent at: {{ chatmessage[3]|safe}} 
+                </div>
+                </div>
+                {% else %}
+                <div style="width:100%">
+                    <div style="float: right;background-color: antiquewhite;white-space: pre-wrap;width:90%;">
+                        {{chatmessage[1]}}: <br/>
+                <b>{{ chatmessage[2]|safe}}</b><br/> 
+                Sent at: {{ chatmessage[3]|safe}} 
+                    </div>
+                </div>
+                {% endif %}
+                    
+                
+            {% endfor %}
+                <div id="focusdiv"></div>
+            </div>
+
+        </div>
+
+        <div class="form-container">
+        <label for="message">Message:</label>
+        <textarea id="in_message" name="in_message" required cols="100" rows="5">{{input_message}}</textarea><br><br>
+        <input type="hidden" name="chat_id" id="chat_id" value="{{chat_id}}"/>
+        Model: <select name="model_name" id="model_name">
+            <option value="openai" {% if model_name == 'openai' %} selected {%endif %}>openai</option>
+            <option value="groq" {% if model_name == 'groq' %} selected {%endif %}>groq</option>
+            <option value="gemini" {% if model_name == 'gemini' %} selected {%endif %}>Gemini</option>
+        </select>
+        <button id="sendbutton">Submit</button>
+    
+        </div>  
+    </div>
+    </div>
+    
+    <script>
+        const chat_id = document.getElementById('chat_id').value;
+        const chatBox = document.getElementById('chatBox');
+        const in_message = document.getElementById('in_message');
+        const model_name = document.getElementById('model_name').value;
+        const sendbutton = document.getElementById('sendbutton');
+        document.getElementById('focusdiv').focus();
+        function addMessage(text, isUser){
+            const div = document.createElement('div');
+            div.style.width = '100%';
+            div.style.float = isUser ? 'right' : 'left';
+            div.innerHTML = `<div style="margin: 0 auto;background-color: ${isUser ? 'aliceblue' : 'antiquewhite'};white-space: pre-wrap;"><b>${isUser ? 'Member' : 'Bot'}</b><br/>${text}</div><br/>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+
+
+        async function sendMessage(){
+            const message = in_message.value.trim();
+            if(!message) return;
+            in_message.value = '';
+            addMessage(message, true);
+            const aiMessage = document.createElement('div');
+            aiMessage.style.cssText = "white-space: pre-wrap;background-color:antiquewhite";
+            aiMessage.classList.add('ai-message');
+            chatBox.appendChild(aiMessage);
+
+
+
+            const eventSource = new EventSource(`/chatresponsestream?in_message=${message}&model_name=${model_name}&chat_id=${encodeURIComponent(chat_id)}`);
+
+            eventSource.onmessage = function(event){
+              
+                if(event.data.indexOf('[DONE]') >= 0){
+                    if(chat_id === ''){
+                    window.location.href = '/refresh';
+                    }
+                    eventSource.close();
+                } else {
+                    aiMessage.innerHTML +=event.data;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }
+            eventSource.onerror = function(){
+                //aiMessage.innerHTML = 'An error occurred';
+                eventSource.close();
+            }
+
+            
+        }
+
+        sendbutton.addEventListener('click', sendMessage);
+        newchat.addEventListener('click', function(){
+            window.location.href = '/newchat';
+        });
+        refresh.addEventListener('click', function(){
+            window.location.href = '/refresh';
+        });
+        in_message.addEventListener('keydown', function(event){
+            if(event.key === 'Enter'){
+                sendMessage();
+            }
+        });
+    </script>
+
+</body>
+</html>
