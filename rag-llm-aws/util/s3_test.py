@@ -8,7 +8,7 @@ obj = boto3.client("s3")
 # AWS Credentials
 ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
 SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-REGION = "us-east-2"
+REGION = os.getenv("AWS_REGION")
 BUCKET_NAME = "finbloom-testbucket1new"
 
 
